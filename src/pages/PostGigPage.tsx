@@ -34,7 +34,7 @@ export const PostGigPage = () => {
             description="Only a draft or a rejected gig can be edited."
             action={
               <Link
-                to="/feed/gigs/posted"
+                to="/gigs/posted"
                 className="rounded-xl bg-aquamarine-500 px-5 py-2.5 text-sm font-semibold text-aquamarine-100 hover:bg-aquamarine-400"
               >
                 Back to my posted gigs

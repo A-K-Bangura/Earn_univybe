@@ -67,7 +67,7 @@ export const PostedGigDetail = () => {
     mutationFn: () => deletePostedGig(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posted-gigs"] });
-      navigate("/feed/gigs/posted", { replace: true });
+      navigate("/gigs/posted", { replace: true });
     },
   });
   const settingsMutation = useMutation({
@@ -127,7 +127,7 @@ export const PostedGigDetail = () => {
             description="It may have been removed."
             action={
               <Link
-                to="/feed/gigs/posted"
+                to="/gigs/posted"
                 className="rounded-xl bg-aquamarine-500 px-5 py-2.5 text-sm font-semibold text-aquamarine-100 hover:bg-aquamarine-400"
               >
                 Back to my posted gigs
@@ -155,7 +155,7 @@ export const PostedGigDetail = () => {
     <PageShell>
       <div className="own-links mx-auto max-w-3xl px-4 py-8">
         <Link
-          to="/feed/gigs/posted"
+          to="/gigs/posted"
           className="mb-6 inline-block text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
         >
           ← Back to my posted gigs
@@ -210,7 +210,7 @@ export const PostedGigDetail = () => {
           )}
           {permissions.can_edit && (
             <Link
-              to={`/feed/gigs/posted/${gig.id}/edit`}
+              to={`/gigs/posted/${gig.id}/edit`}
               className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
               Edit
@@ -218,7 +218,7 @@ export const PostedGigDetail = () => {
           )}
           {permissions.can_view_applicants && (
             <Link
-              to={`/feed/gigs/posted/${gig.id}/applicants`}
+              to={`/gigs/posted/${gig.id}/applicants`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
             >
               <Users className="h-4 w-4" aria-hidden />

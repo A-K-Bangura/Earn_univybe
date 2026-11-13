@@ -1,3 +1,4 @@
+import { queryClient } from './queryClient';
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
@@ -154,4 +155,19 @@ describe("expired session (401) handling", () => {
     await expire();
     expect(redirectTo).not.toHaveBeenCalled();
   });
+});
+
+describe('Earn account cache isolation', () => {
+ it('clears previous account queries and mutation contact data before storing a login', async () => {
+  localStorage.setItem('auth_token','account-a');localStorage.setItem('user',JSON.stringify({id:'a'}));
+  queryClient.setQueryData(['user-profile','a'],{email:'private-a@example.invalid'});
+  const mutation=queryClient.getMutationCache().build(queryClient,{mutationFn:async()=>({contact:'private-contact'})});await mutation.execute(undefined);
+  stubApi(() => ok({token:'account-b',user:doneUser}));await login({email:'o@x.com',password:'password1'});
+  expect(queryClient.getQueryData(['user-profile','a'])).toBeUndefined();expect(queryClient.getMutationCache().getAll()).toHaveLength(0);expect(localStorage.getItem('auth_token')).toBe('account-b');
+ });
+ it('clears private data even when server logout fails', async () => {
+  queryClient.setQueryData(['gigs','detail','a'],{viewer:{is_own_gig:true}});localStorage.setItem('auth_token','account-a');
+  stubApi(()=>({status:503,data:{message:'offline'}}));await logout();
+  expect(localStorage.getItem('auth_token')).toBeNull();expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+ });
 });

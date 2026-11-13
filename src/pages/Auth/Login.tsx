@@ -179,10 +179,10 @@ export const Login = () => {
                 error.code === "INVALID_CREDENTIALS" && (
                   <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800">
                     <Link
-                      to="/auth/forgot-password"
+                      to="/auth/help"
                       className="text-xs text-azure-600 dark:text-azure-400 hover:text-azure-700 dark:hover:text-azure-300 font-semibold underline"
                     >
-                      Forgot your password?
+                      Need help signing in?
                     </Link>
                   </div>
                 )}

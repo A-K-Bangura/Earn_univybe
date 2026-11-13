@@ -5,18 +5,14 @@ export const SIGNUP_ROUTE = "/auth/signup";
 export const LOGIN_ROUTE = "/auth/login";
 export const COURSES_ROUTE = "/courses";
 
-// The product has no practical-sessions page yet (App.tsx has no such
-// route). That CTA keeps its designed label but sends guests to sign-up —
-// the app's existing guest strategy for account-gated features (see
-// utils/guestGuard.ts) — instead of a dead link. Point it at the real route
-// once that page exists.
-export const PRACTICAL_SESSIONS_ROUTE = SIGNUP_ROUTE;
+// Learning-only destinations trigger the landing page’s Learn suggestion popup.
+export const PRACTICAL_SESSIONS_ROUTE = "/practical-sessions";
 // Resources (Round 7, 2026-10-06) and Opportunities/Gigs (Rounds 8-9,
 // 2026-10-09) are real, public, guest-browsable routes — their CTAs go
 // straight there, not through sign-up.
 export const RESOURCES_ROUTE = "/resources";
-export const OPPORTUNITIES_ROUTE = "/feed/opportunities";
-export const GIGS_ROUTE = "/feed/gigs";
+export const OPPORTUNITIES_ROUTE = "/opportunities";
+export const GIGS_ROUTE = "/gigs";
 
 export type FeatureSectionId =
   | "concept"
@@ -86,7 +82,7 @@ export const featureSections: FeatureSectionConfig[] = [
       "Complete the courses you enroll in and earn Vybe Coins along the way. Your coins represent real value and can be exchanged for monetary rewards — turning consistent learning into something that rewards both your knowledge and your effort.",
     background: "bg-rose-500",
     tone: "light",
-    cta: { label: "Get started", href: SIGNUP_ROUTE },
+    cta: { label: "Get started", href: "/wallet" },
     visualSide: "left",
     animationVariant: "coins",
   },

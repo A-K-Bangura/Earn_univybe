@@ -31,7 +31,7 @@ beforeEach(() => vi.resetAllMocks());
 describe("useAuth routing after sign-in", () => {
   it("sends a logged-in student who never finished onboarding back to onboarding, not the dashboard", async () => {
     mocks.login.mockResolvedValue({ token: "t", user: incomplete });
-    const { result } = setup("/auth/login?redirect=/resources/5");
+    const { result } = setup("/auth/login?redirect=/gigs/5");
 
     await act(() => result.current.auth.login({ email: "a@b.c", password: "password1" }));
 
@@ -40,13 +40,13 @@ describe("useAuth routing after sign-in", () => {
 
   it("still honours ?redirect= for a completed student, else the dashboard", async () => {
     mocks.login.mockResolvedValue({ token: "t", user: complete });
-    const withRedirect = setup("/auth/login?redirect=/resources/5");
+    const withRedirect = setup("/auth/login?redirect=/gigs/5");
     await act(() => withRedirect.result.current.auth.login({ email: "a@b.c", password: "password1" }));
-    await waitFor(() => expect(withRedirect.result.current.location.pathname).toBe("/resources/5"));
+    await waitFor(() => expect(withRedirect.result.current.location.pathname).toBe("/gigs/5"));
 
     const plain = setup("/auth/login");
     await act(() => plain.result.current.auth.login({ email: "a@b.c", password: "password1" }));
-    await waitFor(() => expect(plain.result.current.location.pathname).toBe("/dashboard"));
+    await waitFor(() => expect(plain.result.current.location.pathname).toBe("/discover"));
   });
 
   it("verifying the email code resumes onboarding when it is unfinished, else opens the portal", async () => {
@@ -58,6 +58,6 @@ describe("useAuth routing after sign-in", () => {
     mocks.verifyOtp.mockResolvedValueOnce({ token: "t", user: complete, requires_onboarding: false });
     const done = setup("/auth/verify");
     act(() => done.result.current.auth.verifyOtp({ email: "a@b.c", otp: "123456" }));
-    await waitFor(() => expect(done.result.current.location.pathname).toBe("/dashboard"));
+    await waitFor(() => expect(done.result.current.location.pathname).toBe("/discover"));
   });
 });

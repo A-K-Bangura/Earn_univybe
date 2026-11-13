@@ -90,7 +90,7 @@ export const GigCard = ({ gig }: GigCardProps) => {
         </div>
 
         <Link
-          to={`/feed/gigs/${gig.uuid}`}
+          to={`/gigs/${gig.uuid}`}
           className="inline-flex items-center rounded-lg bg-aquamarine-500 px-4 py-2 text-sm font-semibold text-aquamarine-100 transition-colors hover:bg-aquamarine-400"
         >
           View gig

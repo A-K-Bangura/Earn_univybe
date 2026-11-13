@@ -1,8 +1,9 @@
+import { clearPrivateData } from './queryClient';
+import { rememberReturnPath } from '../utils/returnPath';
 import axios, { AxiosError } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 import { env } from "../config/env";
 import { redirectTo } from "../utils/navigation";
-import { clearCertificateSession } from "../utils/certificates/session";
 
 // Create axios instance
 export const api = axios.create({
@@ -52,11 +53,12 @@ api.interceptors.response.use(
         // no secrets, so the student picks up where they left off after
         // signing back in.
         const wasOnboarding = hasPendingToken;
+        rememberReturnPath(window.location.pathname + window.location.search);
+        void clearPrivateData();
         localStorage.removeItem("auth_token");
         localStorage.removeItem("pending_auth_token");
         localStorage.removeItem("user");
         localStorage.removeItem("pending_user");
-        clearCertificateSession();
         // A student who only ever verified their email has no usable password
         // yet (docs/STUDENT_API_PAYLOADS.md §3), so password login can't
         // recover them: they re-verify by email code, then land back in

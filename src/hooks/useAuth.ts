@@ -1,6 +1,7 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import * as authService from "../services/auth";
+import { rememberReturnPath, consumeReturnPath } from '../utils/returnPath';
 import { isOnboardingComplete } from "../utils/onboardingSession";
 
 export const useAuth = () => {
@@ -13,6 +14,7 @@ export const useAuth = () => {
     onSuccess: (data) => {
       // A signed-in account that never finished onboarding goes back to it,
       // not to a dashboard/redirect target its guard would bounce anyway.
+      rememberReturnPath(searchParams.get("redirect"));
       if (!isOnboardingComplete(data.user)) {
         navigate("/onboarding");
         return;
@@ -20,8 +22,7 @@ export const useAuth = () => {
       // A guest sent to log in from e.g. a resource detail page (?redirect=
       // /resources/123) returns there instead of the dashboard. Signup has
       // no equivalent — see docs/DECISIONS.md for why that's scoped out.
-      const redirect = searchParams.get("redirect");
-      navigate(redirect || "/dashboard");
+      navigate(consumeReturnPath());
     },
     onError: (error: Error) => {
       // Don't redirect on error - let the component handle it
@@ -34,6 +35,7 @@ export const useAuth = () => {
     mutationFn: authService.sendOtp,
     onSuccess: () => {
       // Redirect to OTP verification
+      rememberReturnPath(searchParams.get("redirect"));
       navigate("/auth/verify");
     },
     onError: (error: Error) => {
@@ -49,11 +51,12 @@ export const useAuth = () => {
       // coming back after an interruption/expired session) resumes it here;
       // the draft is restored by the page. `requires_onboarding` already
       // folds in the stored-profile check (services/auth.ts::verifyOtp).
+      rememberReturnPath(searchParams.get("redirect"));
       if (data.requires_onboarding) {
         navigate("/onboarding");
       } else {
         // For existing users who don't need onboarding, go to dashboard
-        navigate("/dashboard");
+        navigate(consumeReturnPath());
       }
     },
     onError: (error: Error) => {
@@ -69,8 +72,8 @@ export const useAuth = () => {
 
   return {
     login: loginMutation.mutateAsync, // Use mutateAsync to return a promise
-    signup: sendOtpMutation.mutate, // Alias for sendOtp
-    sendOtp: sendOtpMutation.mutate,
+    signup: sendOtpMutation.mutateAsync, // Alias for sendOtp
+    sendOtp: sendOtpMutation.mutateAsync,
     verifyOtp: verifyOtpMutation.mutate,
     logout,
     isLoading:

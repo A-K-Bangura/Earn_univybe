@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
 import { LandingImg } from "./LandingImg";
 import { pickImage } from "./landingAssets";
-import { COURSES_ROUTE, LOGIN_ROUTE, SIGNUP_ROUTE } from "./landingSections";
+import { LOGIN_ROUTE, SIGNUP_ROUTE } from "./landingSections";
 
 const links = [
-  { to: COURSES_ROUTE, label: "Courses" },
+  { to: "/discover", label: "Discover" },
+  { to: "/opportunities", label: "Opportunities" },
+  { to: "/gigs", label: "Gigs" },
   { to: "/feed", label: "Feed" },
+  { to: "/profile", label: "Profile" },
   { to: LOGIN_ROUTE, label: "Log in" },
   { to: SIGNUP_ROUTE, label: "Sign up" },
 ];

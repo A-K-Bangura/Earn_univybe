@@ -122,7 +122,7 @@ export const GigInterests = () => {
             description="Browse gigs and tap Interested to get started."
             action={
               <Link
-                to="/feed/gigs"
+                to="/gigs"
                 className="rounded-xl bg-aquamarine-500 px-5 py-2.5 text-sm font-semibold text-aquamarine-100 hover:bg-aquamarine-400"
               >
                 Browse gigs
@@ -152,7 +152,7 @@ export const GigInterests = () => {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <Link
-                        to={`/feed/gigs/${item.gig.uuid}`}
+                        to={`/gigs/${item.gig.uuid}`}
                         className="font-semibold text-gray-900 hover:text-aquamarine-200 dark:text-white"
                       >
                         {item.gig.title}
@@ -176,7 +176,7 @@ export const GigInterests = () => {
 
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       <Link
-                        to={`/feed/gigs/${item.gig.uuid}`}
+                        to={`/gigs/${item.gig.uuid}`}
                         className="inline-flex items-center gap-1.5 text-sm font-semibold text-aquamarine-200 hover:text-aquamarine-300"
                       >
                         <MessageSquare className="h-4 w-4" aria-hidden />

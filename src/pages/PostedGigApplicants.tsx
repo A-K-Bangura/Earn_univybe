@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Pagination } from '../components/common/Pagination';
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import { PageShell } from "../components/layout/PageShell";
@@ -6,6 +8,7 @@ import { GigApplicantsTable } from "../components/gigs/GigApplicantsTable";
 import { getGigApplicants, getPostedGig } from "../services/gigs";
 
 export const PostedGigApplicants = () => {
+  const [page, setPage] = useState(1);
   const { id = "" } = useParams<{ id: string }>();
 
   const gigQuery = useQuery({
@@ -15,8 +18,8 @@ export const PostedGigApplicants = () => {
   });
 
   const applicantsQuery = useQuery({
-    queryKey: ["gig-applicants", id, {}],
-    queryFn: () => getGigApplicants(id),
+    queryKey: ["gig-applicants", id, { page }],
+    queryFn: () => getGigApplicants(id, { page }),
     enabled: !!id,
   });
 
@@ -26,7 +29,7 @@ export const PostedGigApplicants = () => {
     <PageShell>
       <div className="own-links mx-auto max-w-3xl px-4 py-8">
         <Link
-          to={`/feed/gigs/posted/${id}`}
+          to={`/gigs/posted/${id}`}
           className="mb-6 inline-block text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
         >
           ← Back to gig
@@ -45,7 +48,7 @@ export const PostedGigApplicants = () => {
           </button>
         </div>
 
-        {applicantsQuery.isLoading || gigQuery.isLoading ? (
+        {applicantsQuery.isError || gigQuery.isError ? <div role="alert" className="earn-empty">Could not load applicants. You may not have permission. <button className="underline" onClick={() => { void applicantsQuery.refetch(); void gigQuery.refetch(); }}>Try again</button></div> : applicantsQuery.isLoading || gigQuery.isLoading ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
@@ -63,6 +66,7 @@ export const PostedGigApplicants = () => {
             permissions={gigQuery.data.permissions}
           />
         ) : null}
+        <Pagination meta={applicantsQuery.data?.meta} onPage={setPage}/>
       </div>
     </PageShell>
   );

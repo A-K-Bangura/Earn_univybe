@@ -55,7 +55,7 @@ export const OpportunityDetail = () => {
                   </button>
                 )}
                 <Link
-                  to="/feed/opportunities"
+                  to="/opportunities"
                   className="text-sm font-semibold text-blue-violet-500 hover:text-blue-violet-400"
                 >
                   Back to opportunities
@@ -161,7 +161,7 @@ export const OpportunityDetail = () => {
     <PageShell>
       <div className="own-links mx-auto max-w-4xl px-4 py-8">
         <Link
-          to="/feed/opportunities"
+          to="/opportunities"
           className="mb-6 flex items-center gap-2 text-gray-600 hover:text-blue-violet-500 dark:text-gray-400"
         >
           <ArrowLeft className="h-5 w-5" aria-hidden />

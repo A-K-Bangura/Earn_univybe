@@ -22,14 +22,14 @@ const renderAt = (path: string) =>
           }
         />
         <Route
-          path="/dashboard"
+          path="/discover"
           element={
             <ProtectedRoute requireOnboarding>
               <p>Dashboard page</p>
             </ProtectedRoute>
           }
         />
-        <Route path="/dashboard-redirect-target" element={<p>never</p>} />
+        <Route path="/discover-redirect-target" element={<p>never</p>} />
       </Routes>
     </MemoryRouter>
   );
@@ -48,19 +48,19 @@ beforeEach(() => localStorage.clear());
 describe("ProtectedRoute", () => {
   it("lets a completed student into routes that require onboarding", () => {
     signInFully(onboarded);
-    renderAt("/dashboard");
+    renderAt("/discover");
     expect(screen.getByText("Dashboard page")).toBeInTheDocument();
   });
 
   it("sends a signed-in student with incomplete onboarding to onboarding", () => {
     signInFully(fresh);
-    renderAt("/dashboard");
+    renderAt("/discover");
     expect(screen.getByText("Onboarding page")).toBeInTheDocument();
   });
 
   it("keeps a verified-but-pending student out of the portal, in onboarding", () => {
     signInPending(fresh);
-    renderAt("/dashboard");
+    renderAt("/discover");
     expect(screen.getByText("Onboarding page")).toBeInTheDocument();
     expect(screen.queryByText("Dashboard page")).not.toBeInTheDocument();
   });
@@ -72,7 +72,7 @@ describe("ProtectedRoute", () => {
   });
 
   it("sends a signed-out visitor to login", () => {
-    renderAt("/dashboard");
+    renderAt("/discover");
     expect(screen.getByText("Login page")).toBeInTheDocument();
     expect(screen.queryByText("Onboarding page")).not.toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe("ProtectedRoute", () => {
   it("does not let a stale full session mask a newer pending one (account switch)", () => {
     signInFully(onboarded);
     signInPending(fresh);
-    renderAt("/dashboard");
+    renderAt("/discover");
     expect(screen.getByText("Onboarding page")).toBeInTheDocument();
   });
 });

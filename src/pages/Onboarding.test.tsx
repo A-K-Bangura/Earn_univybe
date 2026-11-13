@@ -77,7 +77,7 @@ const renderOnboarding = (client?: QueryClient) => {
       <MemoryRouter initialEntries={["/onboarding"]}>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<p>Dashboard page</p>} />
+          <Route path="/discover" element={<p>Dashboard page</p>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>

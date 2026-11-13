@@ -1,3 +1,4 @@
+import { rememberReturnPath } from './returnPath';
 import type { NavigateFunction } from "react-router-dom";
 import { isAuthenticated } from "../services/auth";
 
@@ -8,6 +9,7 @@ import { isAuthenticated } from "../services/auth";
  */
 export const requireAuthOrRedirect = (navigate: NavigateFunction): boolean => {
   if (isAuthenticated()) return true;
+  rememberReturnPath(window.location.pathname + window.location.search);
   navigate("/auth/signup");
   return false;
 };

@@ -3,14 +3,14 @@ import { Link, NavLink } from "react-router-dom";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import { isAuthenticated } from "../../services/auth";
 import { useUIStore } from "../../store/uiStore";
-import { useFeedTabStore } from "../../store/feedTabStore";
+
 import { LandingButton } from "../landing/LandingButton";
 import { LandingImg } from "../landing/LandingImg";
 import { pickImage } from "../landing/landingAssets";
 import {
-  COURSES_ROUTE,
+
   LOGIN_ROUTE,
-  RESOURCES_ROUTE,
+
   SIGNUP_ROUTE,
 } from "../landing/landingSections";
 
@@ -39,14 +39,12 @@ export const GuestHeader = ({ variant = "landing" }: GuestHeaderProps) => {
   const darkMode = useUIStore((state) => state.darkMode);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Reopens whichever of Feed/Opportunities/Gigs was last visited this
-  // session (defaults to "/feed") — see src/store/feedTabStore.ts.
-  const lastVisitedFeedTab = useFeedTabStore((state) => state.lastVisitedFeedTab);
-  // Only routes that exist in the app today (see App.tsx): public courses/feed/resources.
   const navLinks = [
-    { to: COURSES_ROUTE, label: "Courses" },
-    { to: lastVisitedFeedTab, label: "Feed" },
-    { to: RESOURCES_ROUTE, label: "Resources" },
+    { to: "/discover", label: "Discover" },
+    { to: "/opportunities", label: "Opportunities" },
+    { to: "/gigs", label: "Gigs" },
+    { to: "/feed", label: "Feed" },
+    { to: "/profile", label: "Profile" },
   ];
 
   useEffect(() => {
@@ -117,7 +115,7 @@ export const GuestHeader = ({ variant = "landing" }: GuestHeaderProps) => {
 
         <nav
           aria-label="Primary"
-          className={`items-center gap-8 ${themed ? "flex" : "hidden md:flex"}`}
+          className="hidden items-center gap-3 xl:flex xl:gap-6"
         >
           {navLinks.map((link) => (
             <NavLink key={link.to} to={link.to} className={navClass}>
@@ -163,7 +161,7 @@ export const GuestHeader = ({ variant = "landing" }: GuestHeaderProps) => {
               aria-expanded={menuOpen}
               aria-controls="landing-mobile-menu"
               onClick={() => setMenuOpen((open) => !open)}
-              className={`grid h-10 w-10 place-items-center rounded-full bg-transparent p-0 text-gray-900 hover:bg-gray-900/5 md:hidden ${focusRing}`}
+              className={`grid h-10 w-10 place-items-center rounded-full bg-transparent p-0 text-gray-900 hover:bg-gray-900/5 xl:hidden ${focusRing}`}
             >
               {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -175,7 +173,7 @@ export const GuestHeader = ({ variant = "landing" }: GuestHeaderProps) => {
         <nav
           id="landing-mobile-menu"
           aria-label="Mobile"
-          className="border-t border-gray-200/70 bg-white px-4 py-4 shadow-lg md:hidden"
+          className="border-t border-gray-200/70 bg-white px-4 py-4 shadow-lg xl:hidden"
         >
           <ul className="flex flex-col gap-1">
             {[...navLinks, { to: LOGIN_ROUTE, label: "Log in" }].map((link) => (

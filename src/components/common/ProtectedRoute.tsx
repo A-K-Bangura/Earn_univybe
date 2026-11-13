@@ -1,3 +1,4 @@
+import { rememberReturnPath } from '../../utils/returnPath';
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { isAuthenticated } from "../../services/auth";
@@ -37,6 +38,7 @@ export const ProtectedRoute = ({
   const canAccess = authenticated || (isOnboardingRoute && hasPendingToken);
 
   if (requireAuth && !canAccess) {
+    rememberReturnPath(location.pathname + location.search + location.hash);
     // A pending student can't use password login (their account has no usable
     // password yet), so send them back to finish onboarding, not to login.
     return <Navigate to={hasPendingToken ? "/onboarding" : "/auth/login"} replace />;
@@ -44,6 +46,7 @@ export const ProtectedRoute = ({
 
   // If onboarding is required and user hasn't onboarded, redirect to onboarding
   if (requireOnboarding && !hasOnboarded) {
+    rememberReturnPath(location.pathname + location.search + location.hash);
     return <Navigate to="/onboarding" replace />;
   }
 

@@ -82,7 +82,7 @@ export const OpportunityCard = ({ opportunity }: OpportunityCardProps) => {
           </div>
 
           <Link
-            to={`/feed/opportunities/${opportunity.uuid}`}
+            to={`/opportunities/${opportunity.uuid}`}
             className="inline-flex items-center rounded-lg bg-blue-violet-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-violet-400"
           >
             View details

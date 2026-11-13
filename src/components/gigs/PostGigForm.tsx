@@ -126,7 +126,7 @@ const FieldError = ({ messages }: { messages?: string[] }) =>
   ) : null;
 
 /**
- * Create (/feed/gigs/new) and edit (/feed/gigs/posted/:id/edit, draft/rejected
+ * Create (/gigs/new) and edit (/gigs/posted/:id/edit, draft/rejected
  * only) share this form. Sections match the design guide's §10 table exactly.
  */
 export const PostGigForm = ({ mode, initial }: PostGigFormProps) => {
@@ -173,7 +173,7 @@ export const PostGigForm = ({ mode, initial }: PostGigFormProps) => {
     onSuccess: (gig) => {
       setDirty(false);
       queryClient.invalidateQueries({ queryKey: ["posted-gigs"] });
-      navigate(`/feed/gigs/posted/${gig.id}`, { replace: true });
+      navigate(`/gigs/posted/${gig.id}`, { replace: true });
     },
   });
 

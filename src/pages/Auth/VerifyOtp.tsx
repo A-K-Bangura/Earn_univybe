@@ -1,3 +1,4 @@
+import { sendOtp } from '../../services/auth';
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -10,6 +11,7 @@ export const VerifyOtp = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
   const [canResend, setCanResend] = useState(false);
   const [countdown, setCountdown] = useState(60);
 
@@ -77,11 +79,16 @@ export const VerifyOtp = () => {
   };
 
   const handleResend = async () => {
-    if (!canResend || !email) return;
-    setCountdown(60);
-    setCanResend(false);
-    // TODO: Implement resend OTP using sendOtp service
-    console.log("Resending OTP to:", email);
+    if (!canResend || !email || resending) return;
+    setResending(true);
+    setLocalError(null);
+    try {
+      await sendOtp(email);
+      setCountdown(60);
+      setCanResend(false);
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : "Could not resend your code. Try again.");
+    } finally { setResending(false); }
   };
 
   const errorMessage = error instanceof Error ? error.message : localError;
@@ -149,7 +156,7 @@ export const VerifyOtp = () => {
         </p>
         <button
           onClick={handleResend}
-          disabled={!canResend}
+          disabled={!canResend || resending}
           className="text-azure-500 hover:text-azure-600 font-semibold text-sm disabled:text-gray-400"
         >
           {canResend ? "Resend Code" : `Resend in ${countdown}s`}

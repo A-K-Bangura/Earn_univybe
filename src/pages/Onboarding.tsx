@@ -1,3 +1,4 @@
+import { consumeReturnPath } from '../utils/returnPath';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -139,7 +140,7 @@ export const Onboarding = () => {
     if (!serverSaysComplete) return;
     submitted.current = true;
     clearOnboardingDraft(accountId);
-    navigate("/dashboard", { replace: true });
+    navigate(consumeReturnPath(), { replace: true });
   }, [serverSaysComplete, accountId, navigate]);
 
   const {
@@ -274,7 +275,7 @@ export const Onboarding = () => {
       submitted.current = true;
       clearOnboardingDraft(accountId);
       // User is now logged in (token moved from pending to main in completeOnboarding)
-      navigate("/dashboard");
+      navigate(consumeReturnPath());
     },
   });
 

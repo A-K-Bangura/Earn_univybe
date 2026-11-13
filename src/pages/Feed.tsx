@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import { useState, useEffect, useRef } from "react";
 import {
   useQuery,
@@ -6,17 +7,13 @@ import {
   useQueryClient,
   type InfiniteData,
 } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Heart,
   Share2,
   AlertCircle,
   MessageCircle,
   User,
-  Lock,
-  BookOpen,
-  Coins,
-  X,
 } from "lucide-react";
 import { DiscoveryToolbar } from "../components/discovery/DiscoveryToolbar";
 import { FilterSelect } from "../components/discovery/FilterSelect";
@@ -27,14 +24,14 @@ import {
   commentOnPost,
   getPostDetail,
   getRemainingFeedTime,
-  exchangeXpForFeedTime,
   endFeedSession,
   isFeedLockedError,
 } from "../services/feed";
-import { getDashboard } from "../services/dashboard";
+import { LearnHandoff } from '../components/common/LearnHandoff';
+import { accountScope } from '../utils/accountScope';
 import { searchPosts } from "../services/search";
 import { formatRelativeTime } from "../utils/format";
-import { getCurrentUser, isAuthenticated } from "../services/auth";
+import { isAuthenticated } from "../services/auth";
 import { requireAuthOrRedirect } from "../utils/guestGuard";
 import { GuestBanner } from "../components/common/GuestBanner";
 import type {
@@ -83,6 +80,9 @@ const getDisplayName = (
 export const Feed = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { postId } = useParams<{ postId: string }>();
+  const validPostId = !postId || /^\d+$/.test(postId);
+  const postQuery = useQuery({ queryKey: ["feed-detail", accountScope(), postId], queryFn: () => getPostDetail(postId!), enabled: !!postId && validPostId, retry: false });
   const [filters, setFilters] = useState<FeedFilters>({
     per_page: 15,
   });
@@ -96,97 +96,33 @@ export const Feed = () => {
     {}
   );
   const [activeAuthor, setActiveAuthor] = useState<PostAuthor | null>(null);
-  const [showLockModal, setShowLockModal] = useState(false);
   const [feedLocked, setFeedLocked] = useState(false);
-  const feedTimeIntervalRef = useRef<number | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   // Check feed time on mount — feed-time balance is a per-student concept,
   // so this (and the lock it drives) never applies to a guest.
   const { data: feedTime, refetch: refetchFeedTime } = useQuery({
-    queryKey: ["feed-time"],
+    queryKey: ["feed-time", accountScope()],
     queryFn: getRemainingFeedTime,
+    refetchInterval: query => query.state.data?.unlimited ? false : 60000,
     retry: false,
     enabled: isAuthenticated(),
   });
 
-  // Check if feed is locked
-  useEffect(() => {
-    if (feedTime) {
-      const isLocked =
-        !feedTime.unlimited &&
-        (feedTime.seconds === null || feedTime.seconds <= 0);
-      setFeedLocked(isLocked);
-      setShowLockModal(isLocked);
-    }
-  }, [feedTime]);
-
-  // Ensure the student still has access to the feed before gated actions
+  // Only a server-confirmed FEED_LOCKED error triggers the handoff. An unlimited
+  // response or positive remaining balance clears a prior lock without course heuristics.
+  useEffect(() => { if (feedTime?.unlimited || (feedTime?.seconds ?? 0) > 0) setFeedLocked(false); }, [feedTime]);
   const ensureFeedAccess = async (): Promise<boolean> => {
-    try {
-      const result = await refetchFeedTime();
-      const latest = result.data ?? feedTime;
-
-      if (!latest) return true; // fail-open if we can't determine
-
-      const isLocked =
-        !latest.unlimited &&
-        (latest.seconds === null || latest.seconds <= 0);
-
-      if (isLocked) {
-        setFeedLocked(true);
-        setShowLockModal(true);
-        return false;
-      }
-
-      return true;
-    } catch {
-      // On error, keep current state and allow action (don't hard-block UX)
-      return !feedLocked;
+    const result = await refetchFeedTime();
+    if (result.isError) return false;
+    if (!result.data?.unlimited && (result.data?.seconds ?? 0) <= 0) {
+      if (postId) await postQuery.refetch(); else await queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
     }
+    return !!result.data && (result.data.unlimited || (result.data.seconds ?? 0) > 0);
   };
-
-  // Periodically refresh remaining feed time while on the Feed page
-  useEffect(() => {
-    // If we don't yet have feedTime data, don't start an interval
-    if (!feedTime) return;
-
-    // Always do an immediate refetch when this effect runs
-    refetchFeedTime();
-
-    // Clear any existing interval before creating a new one
-    if (feedTimeIntervalRef.current !== null) {
-      window.clearInterval(feedTimeIntervalRef.current);
-      feedTimeIntervalRef.current = null;
-    }
-
-    // Only start polling when access is not unlimited
-    if (!feedTime.unlimited) {
-      const intervalId = window.setInterval(() => {
-        refetchFeedTime();
-      }, 5 * 60 * 1000); // 5 minutes
-
-      feedTimeIntervalRef.current = intervalId;
-    }
-
-    // Cleanup when dependencies change or component unmounts
-    return () => {
-      if (feedTimeIntervalRef.current !== null) {
-        window.clearInterval(feedTimeIntervalRef.current);
-        feedTimeIntervalRef.current = null;
-      }
-    };
-  }, [feedTime, refetchFeedTime]);
-
   // End feed session when leaving the Feed page
   useEffect(() => {
     return () => {
-      // Clear any remaining interval
-      if (feedTimeIntervalRef.current !== null) {
-        window.clearInterval(feedTimeIntervalRef.current);
-        feedTimeIntervalRef.current = null;
-      }
-
       // Feed sessions are a per-student concept — nothing to end for a guest,
       // and this endpoint still requires auth.
       if (isAuthenticated()) {
@@ -203,6 +139,7 @@ export const Feed = () => {
     data: feedData,
     isLoading: isLoadingPosts,
     error: feedError,
+    isSuccess: feedSucceeded,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -225,7 +162,6 @@ export const Feed = () => {
         // Handle FEED_LOCKED error
         if (isFeedLockedError(error)) {
           setFeedLocked(true);
-          setShowLockModal(true);
         }
         throw error;
       }
@@ -234,24 +170,25 @@ export const Feed = () => {
       if (lastPage.current_page >= lastPage.last_page) return undefined;
       return lastPage.current_page + 1;
     },
-    enabled: !isSearchMode || !searchQuery.trim(),
+    enabled: !postId && (!isSearchMode || !searchQuery.trim()),
     retry: (failureCount, error) => {
       // Don't retry on FEED_LOCKED errors
-      if (isFeedLockedError(error)) return false;
+      if (isFeedLockedError(error) || (isAxiosError(error) && (error.response?.status ?? 500) < 500)) return false;
       return failureCount < 3;
     },
   });
+
+  useEffect(() => { if (postId ? postQuery.isSuccess : feedSucceeded) setFeedLocked(false); }, [postId, postQuery.isSuccess, feedSucceeded]);
 
   // Handle feed error separately
   useEffect(() => {
     if (isFeedLockedError(feedError)) {
       setFeedLocked(true);
-      setShowLockModal(true);
     }
   }, [feedError]);
 
   // Search posts query (when searching)
-  const { data: searchResults, isLoading: isSearchLoading } = useQuery({
+  const { data: searchResults, isLoading: isSearchLoading, error: searchError } = useQuery({
     queryKey: ["search-posts", searchQuery, filters.type, searchOffset],
     queryFn: () =>
       searchPosts(searchQuery, {
@@ -259,7 +196,7 @@ export const Feed = () => {
         limit: filters.per_page || 15,
         offset: searchOffset,
       }),
-    enabled: isSearchMode && !!searchQuery.trim(),
+    enabled: !postId && isSearchMode && !!searchQuery.trim(),
   });
 
   // Helper function to convert PostSearchItem to FeedPost format
@@ -304,12 +241,14 @@ export const Feed = () => {
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
+      if (isFeedLockedError(_err)) setFeedLocked(true);
       if (ctx?.previous) {
         queryClient.setQueryData(["feed-posts", filters], ctx.previous);
       }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["feed-detail"] });
     },
   });
 
@@ -336,12 +275,14 @@ export const Feed = () => {
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
+      if (isFeedLockedError(_err)) setFeedLocked(true);
       if (ctx?.previous) {
         queryClient.setQueryData(["feed-posts", filters], ctx.previous);
       }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["feed-detail"] });
     },
   });
 
@@ -354,14 +295,12 @@ export const Feed = () => {
     })();
   };
 
-  const handleShare = async (post: FeedPost) => {
+  const handleShare = async (post: Pick<FeedPost, "id" | "title" | "content_text">) => {
     if (!requireAuthOrRedirect(navigate)) return;
     const canAccess = await ensureFeedAccess();
     if (!canAccess) return;
 
-    const url = post.slug
-      ? `${window.location.origin}/feed/${post.slug}`
-      : `${window.location.origin}/feed/${post.id}`;
+    const url = `${window.location.origin}/feed/${post.id}`;
     try {
       if (typeof navigator.share === "function") {
         await navigator.share({
@@ -396,6 +335,7 @@ export const Feed = () => {
         });
       });
 
+      queryClient.invalidateQueries({ queryKey: ["feed-detail"] });
       // clear input
       setCommentInputs((s) => ({ ...s, [variables.postId]: "" }));
     },
@@ -441,48 +381,6 @@ export const Feed = () => {
     filters.sort_order && filters.sort_order !== "desc",
   ].filter(Boolean).length;
 
-  // XP exchange mutation
-  const exchangeXpMutation = useMutation({
-    mutationFn: (xp: number) => {
-      // Generate a unique client event ID for idempotency
-      const clientEventId = crypto.randomUUID();
-      return exchangeXpForFeedTime(xp, clientEventId);
-    },
-    onSuccess: () => {
-      // Refetch feed time and feed posts
-      refetchFeedTime();
-      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
-      setShowLockModal(false);
-      setFeedLocked(false);
-    },
-  });
-
-  // Get current user for XP check
-  const { data: dashboardData } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: getDashboard,
-    retry: 1,
-    enabled: isAuthenticated(),
-  });
-
-  const currentUser = getCurrentUser();
-  const userXP =
-    dashboardData?.student?.total_xp ??
-    currentUser?.xp_total ??
-    0;
-  const canExchangeXP = userXP >= 10;
-
-  // Handler functions
-  const handleGoToCourses = () => {
-    navigate("/courses");
-  };
-
-  const handleExchangeXP = () => {
-    if (canExchangeXP) {
-      exchangeXpMutation.mutate(10); // Exchange 10 XP for 10 minutes
-    }
-  };
-
   // Format remaining time
   const formatRemainingTime = (seconds: number | null): string => {
     if (seconds === null) return "Unlimited";
@@ -494,7 +392,7 @@ export const Feed = () => {
   };
 
   // Determine which posts to display
-  const posts =
+  const posts = postId ? (postQuery.data ? [postQuery.data] : []) :
     isSearchMode && searchResults
       ? searchResults.results.map(convertSearchItemToPost)
       : feedData?.pages.flatMap(
@@ -503,7 +401,7 @@ export const Feed = () => {
 
   // Automatically load more posts when the user reaches the bottom sentinel
   useEffect(() => {
-    if (isSearchMode) return;
+    if (isSearchMode || postId) return;
     const sentinel = loadMoreRef.current;
     if (!sentinel) return;
 
@@ -537,16 +435,24 @@ export const Feed = () => {
     isFetchingNextPage,
     fetchNextPage,
     isSearchMode,
+    postId,
     isLoadingPosts,
     feedLocked,
   ]);
 
-  const isLoadingFeed = isSearchMode ? isSearchLoading : isLoadingPosts;
+  const isLoadingFeed = postId ? postQuery.isPending && validPostId : isSearchMode ? isSearchLoading : isLoadingPosts;
+  const visibleError = (postId ? postQuery.error : isSearchMode ? searchError : feedError) || likeMutation.error || shareMutation.error || addCommentMutation.error;
+  const accessLocked = feedLocked || isFeedLockedError(visibleError);
+
 
   return (
     <>
     <div className="max-w-4xl mx-auto">
       <GuestBanner />
+      {postId && <Link className="mb-5 inline-block font-semibold underline" to="/feed">← Back to community</Link>}
+      {accessLocked && <LearnHandoff onRetry={() => { void refetchFeedTime(); if (postId) void postQuery.refetch(); else void queryClient.invalidateQueries({queryKey:["feed-posts"]}); }}/> }
+      {!validPostId && <p role="alert" className="earn-empty">This post link is unavailable. Open the community to find current posts.</p>}
+      {visibleError && !isFeedLockedError(visibleError) && <div role="alert" className="earn-empty"><p>We couldn’t load the community content. Your account may not have permission, or the service may be unavailable.</p><button className="mt-3 underline" onClick={() => postId ? void postQuery.refetch() : window.location.reload()}>Try again</button></div>}
       {/* Remaining Time — the heading/subtitle above this is now owned by FeedShell */}
       {feedTime && !feedTime.unlimited && (
         <div className="mb-8 text-right">
@@ -641,7 +547,7 @@ export const Feed = () => {
         )}
 
         {/* Posts */}
-        {isLoadingFeed ? (
+        {accessLocked || visibleError || !validPostId ? null : isLoadingFeed ? (
           <div className="space-y-6">
             {[...Array(5)].map((_, i) => (
               <div
@@ -1030,83 +936,6 @@ export const Feed = () => {
         </div>
       )}
 
-      {/* Feed Lock Modal */}
-      {showLockModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-red-100 dark:bg-red-900/20 p-3 rounded-full">
-                  <Lock className="w-6 h-6 text-red-600 dark:text-red-400" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Feed Locked
-                </h2>
-              </div>
-              <button
-                onClick={() => setShowLockModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Feed locked — complete a lesson or exchange 10 XP to gain access.
-            </p>
-
-            <div className="space-y-3">
-              <button
-                onClick={handleGoToCourses}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-azure-500 hover:bg-azure-600 text-white rounded-lg font-semibold transition-colors"
-              >
-                <BookOpen className="w-5 h-5" />
-                Go to Courses
-              </button>
-
-              <button
-                onClick={handleExchangeXP}
-                disabled={!canExchangeXP || exchangeXpMutation.isPending}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
-              >
-                <Coins className="w-5 h-5" />
-                {exchangeXpMutation.isPending
-                  ? "Exchanging..."
-                  : canExchangeXP
-                  ? "Exchange 10 XP (10 minutes)"
-                  : `Insufficient XP (Need 10, Have ${userXP})`}
-              </button>
-            </div>
-
-            {!canExchangeXP && (
-              <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
-                Complete lessons to earn XP, then exchange it for feed time!
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Feed Lock Overlay - blocks interaction when locked */}
-      {feedLocked && !showLockModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm text-center border border-gray-200 dark:border-gray-700">
-            <Lock className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              Feed Locked
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Complete a lesson or exchange XP to unlock the feed.
-            </p>
-            <button
-              onClick={() => setShowLockModal(true)}
-              className="px-4 py-2 bg-azure-500 hover:bg-azure-600 text-white rounded-lg font-semibold transition-colors"
-            >
-              Unlock Feed
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 };

@@ -25,20 +25,20 @@ describe("isFeedLockedError", () => {
     expect(isFeedLockedError(error)).toBe(true);
   });
 
-  it("detects FEED_LOCKED even when the status is not 403", () => {
+  it("does not treat a mismatched status as a learning lock", () => {
     expect(
       isFeedLockedError(httpError(423, { error: { code: "FEED_LOCKED" } }))
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("falls back to the legacy top-level error_code", () => {
     expect(
-      isFeedLockedError(httpError(400, { error_code: "FEED_LOCKED" }))
+      isFeedLockedError(httpError(403, { error_code: "FEED_LOCKED" }))
     ).toBe(true);
   });
 
-  it("treats any 403 from the feed as locked", () => {
-    expect(isFeedLockedError(httpError(403, {}))).toBe(true);
+  it("does not label unknown forbidden responses as a learning lock", () => {
+    expect(isFeedLockedError(httpError(403, {}))).toBe(false);
   });
 
   it("ignores other HTTP errors", () => {

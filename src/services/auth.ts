@@ -1,4 +1,5 @@
 import api from "./api";
+import { clearPrivateData } from './queryClient';
 import type { ApiResponse, User } from "../types";
 import { ApiError } from "../utils/apiError";
 import type { AxiosError } from "axios";
@@ -7,10 +8,6 @@ import {
   isOnboardingComplete,
 } from "../utils/onboardingSession";
 import { clearAllOnboardingDrafts } from "../utils/onboardingDraft";
-import {
-  clearCertificateSession,
-  getCertificateAccountScope,
-} from "../utils/certificates/session";
 
 const clearPendingSession = () => {
   localStorage.removeItem("pending_auth_token");
@@ -20,20 +17,13 @@ const clearPendingSession = () => {
 const clearFullSession = () => {
   localStorage.removeItem("auth_token");
   localStorage.removeItem("user");
-  // Certificates carry the student's name: drop prepared files with the session.
-  clearCertificateSession();
 };
 
 /** Make `token`/`user` the one fully signed-in session. */
 const storeFullSession = (token: string, user: User) => {
   clearPendingSession();
-  const previous = getCertificateAccountScope();
   localStorage.setItem("auth_token", token);
   localStorage.setItem("user", JSON.stringify(user));
-  // A different account signing in without a logout must not inherit the last
-  // account's prepared certificates (cleared after the write, so listeners see
-  // the new account).
-  if (previous !== null && previous !== String(user.id)) clearCertificateSession();
 };
 
 /**
@@ -123,6 +113,7 @@ export const login = async (
     }
 
     // Store token (clears any leftover pending-onboarding session)
+    await clearPrivateData();
     storeFullSession(response.data.data.token, response.data.data.user);
 
     return response.data.data;
@@ -187,6 +178,7 @@ export const verifyOtp = async (
   };
 
   if (data.token) {
+    await clearPrivateData();
     if (data.requires_onboarding) {
       // The token is only good for finishing onboarding until that succeeds.
       storePendingSession(data.token, data.user);
@@ -232,14 +224,17 @@ export const completeOnboarding = async (
 export const logout = async (): Promise<void> => {
   try {
     await api.post("/student/auth/logout");
-  } catch (error) {
-    console.error("Logout error:", error);
+  } catch {
+    console.warn("Server sign-out could not be confirmed; clearing this device session.");
   } finally {
     clearFullSession();
     clearPendingSession();
     // Explicit sign-out (possibly on a shared device): forget on-device
     // onboarding drafts too. Session *expiry* keeps them — see api.ts.
     clearAllOnboardingDrafts();
+    sessionStorage.removeItem("earn:return");
+    localStorage.removeItem("signup_email");
+    await clearPrivateData();
   }
 };
 

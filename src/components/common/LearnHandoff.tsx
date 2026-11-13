@@ -1,0 +1,4 @@
+export const LEARN_URL = 'https://univybesl.com';
+export function LearnHandoff({ onRetry }: { onRetry?: () => void }) {
+  return <section role="status" className="my-6 rounded-2xl border border-blue-violet-800 bg-blue-violet-900 p-6 text-gray-900 dark:border-blue-violet-300 dark:bg-blue-violet-100 dark:text-white"><h2 className="text-xl font-bold">Continue on UniVybe Learn</h2><p className="mt-3 max-w-xl">Your community access is currently locked under UniVybe’s learning access rules. Continue learning on UniVybe Learn, then return here. Opportunities and gigs are still available on Earn.</p><a className="mt-5 inline-flex rounded-xl bg-blue-violet-500 px-5 py-3 font-semibold text-white" href={LEARN_URL} target="_blank" rel="noopener noreferrer">Go to UniVybe Learn ↗</a>{onRetry && <button className="ml-4 mt-4 min-h-11 font-semibold underline" onClick={onRetry}>Check access again</button>}</section>;
+}

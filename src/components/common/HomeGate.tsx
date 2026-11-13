@@ -10,7 +10,7 @@ import { hasPendingOnboardingSession } from "../../utils/onboardingSession";
  * strand them on the guest landing page), everyone else sees `guest`.
  */
 export const HomeGate = ({ guest }: { guest: ReactNode }) => {
-  if (isAuthenticated()) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated()) return <Navigate to="/discover" replace />;
   if (hasPendingOnboardingSession()) return <Navigate to="/onboarding" replace />;
   return <>{guest}</>;
 };

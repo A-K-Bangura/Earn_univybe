@@ -24,9 +24,9 @@ export const isFeedLockedError = (error: unknown): boolean => {
   if (!isAxiosError<ApiResponse>(error)) return false;
   const { status, data } = error.response ?? {};
   return (
-    status === 403 ||
-    data?.error?.code === "FEED_LOCKED" ||
-    data?.error_code === "FEED_LOCKED"
+    status === 403 && (
+      data?.error?.code === "FEED_LOCKED" || data?.error_code === "FEED_LOCKED"
+    )
   );
 };
 

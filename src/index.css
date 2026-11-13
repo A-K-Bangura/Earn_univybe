@@ -274,3 +274,11 @@ a:not(.landing-root a):not(.own-links a):hover {
     animation: none;
   }
 }
+
+/* Earn application surfaces */
+.earn-button, .earn-button-secondary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: .5rem; border-radius: .85rem; padding: .75rem 1.25rem; font-weight: 650; }
+.earn-button { background: #8338ec; color: white !important; }
+.earn-button-secondary { border: 1px solid #9ca3af; }
+.earn-empty { padding: 1.5rem; border-radius: 1rem; border: 1px solid #9ca3af; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #609dff; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }

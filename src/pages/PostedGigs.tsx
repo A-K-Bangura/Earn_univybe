@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Pagination } from '../components/common/Pagination';
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { PlusCircle } from "lucide-react";
@@ -25,9 +27,10 @@ const STATUS_CLASSES: Record<GigStatus, string> = {
 };
 
 export const PostedGigs = () => {
+  const [page, setPage] = useState(1);
   const gigsQuery = useQuery({
-    queryKey: ["posted-gigs", {}],
-    queryFn: () => getPostedGigs(),
+    queryKey: ["posted-gigs", { page }],
+    queryFn: () => getPostedGigs({ page }),
   });
 
   const gigs = gigsQuery.data?.data ?? [];
@@ -41,7 +44,7 @@ export const PostedGigs = () => {
             <p className="text-gray-600 dark:text-gray-400">Create, submit, and manage the gigs you've posted.</p>
           </div>
           <Link
-            to="/feed/gigs/new"
+            to="/gigs/new"
             className="inline-flex items-center gap-2 rounded-xl bg-aquamarine-500 px-4 py-2 text-sm font-semibold text-aquamarine-100 transition-colors hover:bg-aquamarine-400"
           >
             <PlusCircle className="h-4 w-4" aria-hidden />
@@ -49,7 +52,7 @@ export const PostedGigs = () => {
           </Link>
         </header>
 
-        {gigsQuery.isLoading ? (
+        {gigsQuery.isError ? <div role="alert" className="earn-empty">Could not load your gigs. <button onClick={() => void gigsQuery.refetch()} className="underline">Try again</button></div> : gigsQuery.isLoading ? (
           <div className="space-y-3">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100 dark:bg-gray-800" />
@@ -61,7 +64,7 @@ export const PostedGigs = () => {
             description="Post a small job and see who's interested."
             action={
               <Link
-                to="/feed/gigs/new"
+                to="/gigs/new"
                 className="rounded-xl bg-aquamarine-500 px-5 py-2.5 text-sm font-semibold text-aquamarine-100 hover:bg-aquamarine-400"
               >
                 Post a gig
@@ -73,7 +76,7 @@ export const PostedGigs = () => {
             {gigs.map((gig) => (
               <Link
                 key={gig.id}
-                to={`/feed/gigs/posted/${gig.id}`}
+                to={`/gigs/posted/${gig.id}`}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-aquamarine-300 dark:border-gray-700 dark:bg-gray-800"
               >
                 <div className="min-w-0">
@@ -94,6 +97,7 @@ export const PostedGigs = () => {
             ))}
           </div>
         )}
+        <Pagination meta={gigsQuery.data?.meta} onPage={setPage}/>
       </div>
     </PageShell>
   );

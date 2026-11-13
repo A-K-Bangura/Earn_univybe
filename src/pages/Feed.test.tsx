@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AxiosError, type AxiosResponse } from "axios";
 import type { PaginatedResponse } from "../types";
@@ -16,7 +16,7 @@ vi.mock("../components/layout/PageShell", () => ({
 }));
 
 vi.mock("../services/auth", () => ({
-  isAuthenticated: () => true,
+  isAuthenticated: vi.fn(() => true),
   getCurrentUser: () => ({ id: 12, email: "john@example.com", xp_total: 50 }),
 }));
 
@@ -37,7 +37,9 @@ vi.mock("../services/feed", async (importOriginal) => ({
 }));
 
 import { Feed } from "./Feed";
-import { getFeedPosts, getPostDetail } from "../services/feed";
+import { isAuthenticated } from '../services/auth';
+import { getDashboard } from '../services/dashboard';
+import { getFeedPosts, getPostDetail, getRemainingFeedTime } from "../services/feed";
 
 // --- Fixtures (shapes taken from docs/STUDENT_API_PAYLOADS.md §41 / §44) ----
 
@@ -104,15 +106,13 @@ const detail: PostDetail = {
   ],
 };
 
-const renderFeed = () => {
+const renderFeed = (url = "/feed") => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <Feed />
-      </MemoryRouter>
+      <MemoryRouter initialEntries={[url]}><Routes><Route path="/feed" element={<Feed/>}/><Route path="/feed/:postId" element={<Feed/>}/></Routes></MemoryRouter>
     </QueryClientProvider>
   );
 };
@@ -120,6 +120,8 @@ const renderFeed = () => {
 describe("Feed page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isAuthenticated).mockReturnValue(true);
+    vi.mocked(getRemainingFeedTime).mockResolvedValue({seconds:1500,unlimited:false});
     // jsdom has no IntersectionObserver (used for infinite scroll).
     vi.stubGlobal(
       "IntersectionObserver",
@@ -213,8 +215,30 @@ describe("Feed page", () => {
 
     await waitFor(() =>
       expect(
-        screen.getByRole("heading", { name: "Feed Locked" })
+        screen.getByRole("heading", { name: "Continue on UniVybe Learn" })
       ).toBeInTheDocument()
     );
   });
+
+  it('allows guests without a remaining-time request', async () => {
+    vi.mocked(isAuthenticated).mockReturnValue(false);vi.mocked(getFeedPosts).mockResolvedValue(page([post]));renderFeed();
+    expect(await screen.findByText('Study Tip')).toBeInTheDocument();expect(getRemainingFeedTime).not.toHaveBeenCalled();expect(getDashboard).not.toHaveBeenCalled();
+  });
+  it('honours the server unlimited exemption with no timer or learning handoff', async () => {
+    vi.mocked(getRemainingFeedTime).mockResolvedValue({seconds:null,unlimited:true});vi.mocked(getFeedPosts).mockResolvedValue(page([post]));renderFeed();
+    expect(await screen.findByText('Study Tip')).toBeInTheDocument();expect(screen.queryByText('Remaining Time')).not.toBeInTheDocument();expect(screen.queryByRole('link',{name:/Go to UniVybe Learn/})).not.toBeInTheDocument();expect(getDashboard).not.toHaveBeenCalled();
+  });
+  it('preserves positive earned access without a handoff', async () => {
+    vi.mocked(getFeedPosts).mockResolvedValue(page([post]));renderFeed();expect(await screen.findByText('Study Tip')).toBeInTheDocument();expect(screen.queryByRole('link',{name:/Go to UniVybe Learn/})).not.toBeInTheDocument();
+  });
+  it('does not present a generic account 403 as a learning lock', async () => {
+    vi.mocked(getFeedPosts).mockRejectedValue(new AxiosError('forbidden',AxiosError.ERR_BAD_REQUEST,undefined,undefined,{status:403,data:{error:{code:'ACCOUNT_NOT_ACTIVE'}}} as AxiosResponse));renderFeed();
+    expect(await screen.findByRole('alert')).toHaveTextContent('couldn’t load');expect(screen.queryByRole('link',{name:/Go to UniVybe Learn/})).not.toBeInTheDocument();
+  });
+ it('opens a supported numeric permalink without requesting a list', async()=>{
+  vi.mocked(getPostDetail).mockResolvedValue(detail);renderFeed('/feed/1');expect(await screen.findByText('Study Tip')).toBeInTheDocument();expect(getPostDetail).toHaveBeenCalledWith('1');expect(getFeedPosts).not.toHaveBeenCalled();
+ });
+ it('does not fabricate slug resolution', async()=>{
+  renderFeed('/feed/unknown-slug');expect(screen.getByRole('alert')).toHaveTextContent('post link is unavailable');expect(getPostDetail).not.toHaveBeenCalled();expect(getFeedPosts).not.toHaveBeenCalled();
+ });
 });

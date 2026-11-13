@@ -1,3 +1,4 @@
+import { accountScope } from '../utils/accountScope';
 import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
@@ -109,7 +110,7 @@ export const Gigs = () => {
   };
 
   const listQuery = useQuery({
-    queryKey: ["gigs", "list", signedIn, apiFilters, filters.view === "closed"],
+    queryKey: ["gigs", "list", accountScope(), apiFilters, filters.view === "closed"],
     queryFn: () => getGigs(apiFilters, filters.view === "closed"),
     placeholderData: keepPreviousData,
   });
@@ -287,7 +288,7 @@ export const Gigs = () => {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            to={signedIn ? "/feed/gigs/new" : "/auth/login?redirect=/feed/gigs/new"}
+            to={signedIn ? "/gigs/new" : "/auth/login?redirect=/gigs/new"}
             className="inline-flex items-center gap-2 rounded-xl bg-aquamarine-500 px-4 py-2 text-sm font-semibold text-aquamarine-100 transition-colors hover:bg-aquamarine-400"
           >
             <PlusCircle className="h-4 w-4" aria-hidden />
@@ -296,13 +297,13 @@ export const Gigs = () => {
           {signedIn && (
             <>
               <Link
-                to="/feed/gigs/interests"
+                to="/gigs/interests"
                 className="text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 My interests
               </Link>
               <Link
-                to="/feed/gigs/posted"
+                to="/gigs/posted"
                 className="text-sm font-semibold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 My posted gigs
@@ -408,7 +409,7 @@ export const Gigs = () => {
             action={
               filters.view === "open" ? (
                 <Link
-                  to={signedIn ? "/feed/gigs/new" : "/auth/login?redirect=/feed/gigs/new"}
+                  to={signedIn ? "/gigs/new" : "/auth/login?redirect=/gigs/new"}
                   className="rounded-xl bg-aquamarine-500 px-5 py-2.5 text-sm font-semibold text-aquamarine-100 hover:bg-aquamarine-400"
                 >
                   Post a gig

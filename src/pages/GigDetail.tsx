@@ -1,3 +1,4 @@
+import { accountScope } from '../utils/accountScope';
 import { useState, type ReactNode } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +19,7 @@ export const GigDetail = () => {
   const [justContacted, setJustContacted] = useState(false);
 
   const detailQuery = useQuery({
-    queryKey: ["gigs", "detail", id, signedIn],
+    queryKey: ["gigs", "detail", id, accountScope()],
     queryFn: () => getGig(id),
     enabled: !!id,
     retry: (failureCount, error) => !isGigNotFoundError(error) && failureCount < 1,
@@ -62,7 +63,7 @@ export const GigDetail = () => {
                   </button>
                 )}
                 <Link
-                  to="/feed/gigs"
+                  to="/gigs"
                   className="text-sm font-semibold text-aquamarine-200 hover:text-aquamarine-300"
                 >
                   Back to gigs
@@ -84,7 +85,7 @@ export const GigDetail = () => {
   if (!signedIn) {
     contactAction = gig.contact_action?.available ? (
       <Link
-        to={`/auth/login?redirect=${encodeURIComponent(`/feed/gigs/${id}`)}`}
+        to={`/auth/login?redirect=${encodeURIComponent(`/gigs/${id}`)}`}
         className="flex w-full items-center justify-center rounded-xl bg-aquamarine-500 px-5 py-3 text-sm font-semibold text-aquamarine-100 transition-colors hover:bg-aquamarine-400"
       >
         Sign in to express interest
@@ -101,7 +102,7 @@ export const GigDetail = () => {
   } else if (viewer?.is_own_gig) {
     contactAction = (
       <Link
-        to={`/feed/gigs/posted/${gig.id}`}
+        to={`/gigs/posted/${gig.id}`}
         className="flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       >
         Manage your gig
@@ -211,7 +212,7 @@ export const GigDetail = () => {
     <PageShell>
       <div className="own-links mx-auto max-w-4xl px-4 py-8">
         <Link
-          to="/feed/gigs"
+          to="/gigs"
           className="mb-6 flex items-center gap-2 text-gray-600 hover:text-aquamarine-200 dark:text-gray-400"
         >
           <ArrowLeft className="h-5 w-5" aria-hidden />

@@ -34,8 +34,12 @@ export const Signup = () => {
     // Store email for verification page
     localStorage.setItem("signup_email", email);
     
-    signup(email); // Now calls sendOtp with just email
-    setEmailSent(true);
+    try {
+      await signup(email);
+      setEmailSent(true);
+    } catch {
+      setEmailSent(false);
+    }
   };
 
   const errorMessage = error instanceof Error ? error.message : localError;
@@ -70,7 +74,7 @@ export const Signup = () => {
   return (
     <AuthLayout
       pose="learning"
-      message="Learn, level up and earn rewards. It all starts with one email!"
+      message="Opportunities, gigs and community. It all starts with one email!"
     >
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">
         Create Account

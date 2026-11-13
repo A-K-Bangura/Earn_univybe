@@ -18,7 +18,7 @@ export const PageShell = ({
       {showTopNav && <TopNav />}
       <main
         className={`${
-          showBottomNav ? "pb-20" : "pb-0"
+          showBottomNav ? "pb-[calc(5rem+env(safe-area-inset-bottom))]" : "pb-0"
         } md:pb-4 w-full max-w-full overflow-x-hidden`}
       >
         {children}
