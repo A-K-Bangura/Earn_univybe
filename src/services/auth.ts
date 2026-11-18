@@ -9,6 +9,8 @@ import {
 } from "../utils/onboardingSession";
 import { clearAllOnboardingDrafts } from "../utils/onboardingDraft";
 
+import type { SendOtpReferralStatus, VerifyOtpReferralStatus } from "../types/referral";
+
 const clearPendingSession = () => {
   localStorage.removeItem("pending_auth_token");
   localStorage.removeItem("pending_user");
@@ -58,10 +60,27 @@ export interface AuthResponse {
   user: User;
 }
 
+// Round 15: `referral_code` alone means "the student typed this" (must be
+// valid or the request 422s on that field); with `referral_captured_at` it
+// means "this came from a stored ?ref= link" (never fails — a stale/invalid
+// capture is just reported back as `referral.status: "ignored"`).
+export interface SendOtpParams {
+  email: string;
+  referral_code?: string;
+  referral_captured_at?: string;
+}
+
+export interface SendOtpResponse {
+  message: string;
+  expiry_minutes: number;
+  referral: { status: SendOtpReferralStatus; code: string | null };
+}
+
 export interface VerifyOtpResponse {
   token: string;
   user: User;
   requires_onboarding: boolean;
+  referral: { status: VerifyOtpReferralStatus };
 }
 
 export interface CompleteOnboardingData {
@@ -135,23 +154,18 @@ export const login = async (
 
 // Send OTP
 export const sendOtp = async (
-  email: string
-): Promise<{ email: string; expires_in: number }> => {
-  const response = await api.post<
-    ApiResponse<{
-      email: string;
-      expires_in: number;
-    }>
-  >("/student/auth/send-otp", { email });
+  params: SendOtpParams
+): Promise<SendOtpResponse> => {
+  const response = await api.post<ApiResponse<SendOtpResponse>>(
+    "/student/auth/send-otp",
+    params
+  );
 
-  if (!response.data.success) {
+  if (!response.data.success || !response.data.data) {
     throw new Error(response.data.message || "OTP send failed");
   }
 
-  return response.data.data as {
-    email: string;
-    expires_in: number;
-  };
+  return response.data.data;
 };
 
 // Verify OTP

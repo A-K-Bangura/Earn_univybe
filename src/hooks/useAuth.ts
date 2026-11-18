@@ -4,6 +4,8 @@ import * as authService from "../services/auth";
 import { rememberReturnPath, consumeReturnPath } from '../utils/returnPath';
 import { isOnboardingComplete } from "../utils/onboardingSession";
 
+import { clearReferralCapture } from "../utils/referralCapture";
+
 export const useAuth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -33,7 +35,8 @@ export const useAuth = () => {
   // Send OTP mutation (used for signup)
   const sendOtpMutation = useMutation({
     mutationFn: authService.sendOtp,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.referral.status === "ignored") clearReferralCapture();
       // Redirect to OTP verification
       rememberReturnPath(searchParams.get("redirect"));
       navigate("/auth/verify");
@@ -47,6 +50,7 @@ export const useAuth = () => {
   const verifyOtpMutation = useMutation({
     mutationFn: authService.verifyOtp,
     onSuccess: (data) => {
+      clearReferralCapture();
       // Anyone who hasn't finished onboarding (new signups, or a student
       // coming back after an interruption/expired session) resumes it here;
       // the draft is restored by the page. `requires_onboarding` already

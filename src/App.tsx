@@ -9,6 +9,7 @@ import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { FeaturePage } from './components/layout/FeaturePage';
 import { DiscoverEntry } from './components/common/DiscoverEntry';
 import { useUIStore } from './store/uiStore';
+import { ReferralCapture } from './components/common/ReferralCapture';
 const Discover = lazy(() => import('./pages/Discover').then(m => ({ default: m.Discover })));
 const Opportunities = lazy(() => import('./pages/Opportunities').then(m => ({ default: m.Opportunities })));
 const OpportunityDetail = lazy(() => import('./pages/OpportunityDetail').then(m => ({ default: m.OpportunityDetail })));
@@ -35,7 +36,7 @@ function App() {
  const dark = useUIStore(s => s.darkMode);
  useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
  useEffect(() => { if (typeof caches !== 'undefined') void caches.delete('api-cache'); }, []);
- return <ErrorBoundary><QueryClientProvider client={queryClient}><BrowserRouter><ScrollToTop/><AccountBoundary/><OfflineIndicator/><Suspense fallback={<div role="status" className="p-10 text-center">Loading UniVybe Earn…</div>}><Routes>
+ return <ErrorBoundary><QueryClientProvider client={queryClient}><BrowserRouter><ScrollToTop/><AccountBoundary/><OfflineIndicator/><ReferralCapture/><Suspense fallback={<div role="status" className="p-10 text-center">Loading UniVybe Earn…</div>}><Routes>
  <Route path="/auth/help" element={<FeaturePage title="Need help signing in?" description="Password recovery is not available in Earn yet. Use the email verification flow for your existing UniVybe account, or visit UniVybe Learn for support."><a className="earn-button" href="https://univybesl.com">Go to UniVybe Learn ↗</a></FeaturePage>}/><Route path="/auth/login" element={<Login/>}/><Route path="/auth/signup" element={<Signup/>}/><Route path="/auth/verify" element={<VerifyOtp/>}/>
  <Route path="/onboarding" element={<ProtectedRoute><Onboarding/></ProtectedRoute>}/>
  <Route path="/discover" element={<DiscoverEntry guest={<Landing/>}><Discover/></DiscoverEntry>}/>

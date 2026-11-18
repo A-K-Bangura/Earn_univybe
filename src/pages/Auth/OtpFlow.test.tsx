@@ -25,7 +25,7 @@ describe('OTP request feedback', () => {
     render(<MemoryRouter><VerifyOtp/></MemoryRouter>);
     for(let second=0;second<60;second++) await act(async()=>vi.advanceTimersByTime(1000));
     await act(async()=>fireEvent.click(screen.getByRole('button',{name:/Resend/})));
-    expect(mocks.resend).toHaveBeenCalledWith('person@example.invalid');expect(screen.getByText('Please try again')).toBeInTheDocument();
+    expect(mocks.resend).toHaveBeenCalledWith({email:'person@example.invalid'});expect(screen.getByText('Please try again')).toBeInTheDocument();
     expect(screen.getByRole('button',{name:/Resend/})).not.toBeDisabled();
   });
 });

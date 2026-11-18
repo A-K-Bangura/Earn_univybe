@@ -1,5 +1,6 @@
 import type { CoinBalance } from "./coins";
 import type { GigReputation } from "./gig";
+import type { AmbassadorProfile } from "./referral";
 
 export interface UserProfile {
   id: string | number;
@@ -62,6 +63,8 @@ export interface UserProfile {
   coins?: CoinBalance;
   /** Gigs (Round 9) — additive; ratings received as a worker and/or as a gig creator. */
   gig_reputation?: GigReputation;
+  /** Campus Ambassador & Referrals (Round 15) — `null` for every student who isn't an ambassador. */
+  ambassador?: AmbassadorProfile | null;
   last_activity_date?: string | null;
   badges_count?: number;
   courses_enrolled?: number;

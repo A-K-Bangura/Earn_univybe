@@ -83,7 +83,7 @@ export const VerifyOtp = () => {
     setResending(true);
     setLocalError(null);
     try {
-      await sendOtp(email);
+      await sendOtp({ email });
       setCountdown(60);
       setCanResend(false);
     } catch (error) {
